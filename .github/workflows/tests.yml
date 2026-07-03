@@ -1,0 +1,59 @@
+name: tests
+
+# Runs the offline unit suite for the RAG pipeline: chunking, local
+# sentence-transformers embeddings, and pure-vector retrieval ranking.
+# These tests need NO database and NO LLM API key (see tests/test_rag.py),
+# so the whole job runs green with zero secrets configured.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (offline · no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Cache Hugging Face model (all-MiniLM-L6-v2)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-all-MiniLM-L6-v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run offline test suite
+        env:
+          # common.py lives at the repo root; tests do `from common import ...`.
+          # There is no packaging/conftest, and tests/ has no __init__.py, so we
+          # run via `python -m pytest` (puts CWD on sys.path) and set PYTHONPATH
+          # to guarantee the import resolves. No DATABASE_URL / LLM_API_KEY used.
+          PYTHONPATH: ${{ github.workspace }}
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          TOKENIZERS_PARALLELISM: "false"
+        run: python -m pytest -q
