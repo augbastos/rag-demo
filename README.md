@@ -1,5 +1,7 @@
 # rag-demo — a minimal, working RAG pipeline
 
+[![tests](https://github.com/augbastos/rag-demo/actions/workflows/tests.yml/badge.svg)](https://github.com/augbastos/rag-demo/actions/workflows/tests.yml)
+
 A small, self-contained Retrieval-Augmented Generation pipeline you can clone and run in a few minutes. It's the same technique behind a production doc-grounded copilot I built ("ask a question, get an answer grounded in a knowledge base, with citations") — stripped down to its essentials on a generic sample dataset.
 
 The point isn't the sample data. It's to show the moving parts of RAG working end-to-end: chunking, embeddings, a `pgvector` similarity index, a retrieval query, and a grounded LLM answer that refuses to make things up.
