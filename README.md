@@ -10,7 +10,7 @@ The point isn't the sample data. It's to show the moving parts of RAG working en
 
 ```mermaid
 flowchart LR
-    A[docs/*.md] -->|chunk| B[text chunks]
+    A[data/*.md] -->|chunk| B[text chunks]
     B -->|embed| C[(pgvector<br/>Postgres)]
     Q[user question] -->|embed| D[query vector]
     D -->|cosine top-k| C
