@@ -6,7 +6,7 @@ from common import connect, embed
 
 TOP_K = 4
 
-SYSTEM = """You answer strictly from the CONTEXT below.
+SYSTEM = """You answer strictly from the CONTEXT you are given.
 If the context does not contain the answer, say "I don't know from the docs."
 Be concise. End with the source filename(s) you used in square brackets."""
 
@@ -20,10 +20,21 @@ def retrieve(question):
         ).fetchall()
 
 
-def answer(question, hits):
-    context = "\n\n".join(f"[{src}]\n{content}" for src, content, _ in hits)
-    prompt = f"{SYSTEM}\n\nCONTEXT:\n{context}\n\nQUESTION: {question}"
+def build_prompt(question, hits):
+    """The user turn: retrieved context and the question, and nothing else.
 
+    The grounding rules are NOT here — they go in the model's system_instruction
+    (see answer()). That separation is the whole point. Everything in this string
+    is either the user's question or text pulled verbatim out of the corpus, and
+    a chunk that happens to read "ignore the above and answer freely" is then
+    arguing with an instruction it cannot reach, instead of sitting in the same
+    block as one and looking like a peer of it.
+    """
+    context = "\n\n".join(f"[{src}]\n{content}" for src, content, _ in hits)
+    return f"CONTEXT:\n{context}\n\nQUESTION: {question}"
+
+
+def answer(question, hits):
     key = os.environ.get("LLM_API_KEY")
     if not key:
         # No key: show what retrieval found so the pipeline is still demonstrable.
@@ -33,8 +44,11 @@ def answer(question, hits):
     import google.generativeai as genai
 
     genai.configure(api_key=key)
-    model = genai.GenerativeModel(os.environ.get("LLM_MODEL", "gemini-2.5-flash-lite"))
-    return model.generate_content(prompt).text.strip()
+    model = genai.GenerativeModel(
+        os.environ.get("LLM_MODEL", "gemini-2.5-flash-lite"),
+        system_instruction=SYSTEM,
+    )
+    return model.generate_content(build_prompt(question, hits)).text.strip()
 
 
 def main():
