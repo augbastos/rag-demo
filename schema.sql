@@ -7,9 +7,11 @@ create table if not exists chunks (
     embedding vector(384) not null          -- all-MiniLM-L6-v2 = 384 dims
 );
 
--- cosine-distance index; lists tuned for small corpora
-create index if not exists chunks_embedding_idx
-    on chunks using ivfflat (embedding vector_cosine_ops) with (lists = 10);
+-- No vector index on purpose: at demo-corpus size an exact scan is fast, and an
+-- approximate index (IVFFlat) can miss true neighbours on a handful of rows.
+-- For a larger corpus, add HNSW (or IVFFlat with lists sized to the row count):
+--   create index on chunks using hnsw (embedding vector_cosine_ops);
+drop index if exists chunks_embedding_idx;  -- older versions of this file created an IVFFlat index
 
 -- top-k retrieval, returned as (source, content, similarity)
 create or replace function match_chunks(query_embedding vector(384), k int)
