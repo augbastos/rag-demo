@@ -40,7 +40,7 @@ python ask.py "Can I use Nimbus offline?"
 | `common.py` | DB connection, embeddings, chunking |
 | `ingest.py` | Chunk + embed `data/*.md`, load into pgvector |
 | `ask.py` | Embed a question, retrieve top-k, answer grounded in the retrieved chunks |
-| `schema.sql` | pgvector table, index, `match_chunks()` |
+| `schema.sql` | pgvector table, `match_chunks()` (exact search, no ANN index) |
 
 ## License
 
